@@ -238,8 +238,8 @@ def read_i2c_block(no_bytes = max_recv_size):
 
 def read_identified_i2c_block(read_command_id, no_bytes):
 	data = [-1]
-	while data[0] != read_command_id[0]:
-		data = read_i2c_block(no_bytes + 1)
+	#while data[0] != read_command_id[0]:
+	data = read_i2c_block(no_bytes + 1)
 
 	return data[1:]
 
@@ -259,7 +259,7 @@ def digitalWrite(pin, value):
 def analogRead(pin):
 	write_i2c_block(aRead_cmd + [pin, unused, unused])
 	number = read_identified_i2c_block(aRead_cmd, no_bytes = 2)
-	return number[0] * 256 + number[1]
+	return number[1] * 256 + number[2]
 
 
 # Write PWM
@@ -297,7 +297,7 @@ def temp(pin, model = '1.0'):
 def ultrasonicRead(pin):
 	write_i2c_block(uRead_cmd + [pin, unused, unused])
 	number = read_identified_i2c_block(uRead_cmd, no_bytes = 2)
-	return (number[0] * 256 + number[1])
+	return (number[1] * 256 + number[2])
 
 
 # Read the firmware version
@@ -332,22 +332,37 @@ def rtc_getTime():
 # Read and return temperature and humidity from Grove DHT Pro
 def dht(pin, module_type):
 	write_i2c_block(dht_temp_cmd + [pin, module_type, unused])
-	number = read_identified_i2c_block(dht_temp_cmd, no_bytes = 8)
+	number = read_identified_i2c_block(dht_temp_cmd, no_bytes = 9)
 
 	if p_version==2:
 		h=''
 		for element in (number[0:4]):
 			h+=chr(element)
+                print(h)
+                try:
+                        t_val=struct.unpack('f', h)
+                        #t_val=struct.unpack('f', h)
+                        t = round(t_val[0], 2)
 
-		t_val=struct.unpack('f', h)
-		t = round(t_val[0], 2)
+                        h = ''
+                        for element in (number[4:8]):
+                                h+=chr(element)
 
-		h = ''
-		for element in (number[4:8]):
-			h+=chr(element)
+                        hum_val=struct.unpack('f',h)
+                        hum = round(hum_val[0], 2)
+                except:
+                        t = 200
+                        hum = 200
+                        
+		# t_val=struct.unpack('f', h)
+	        # t = round(t_val[0], 2)
 
-		hum_val=struct.unpack('f',h)
-		hum = round(hum_val[0], 2)
+		# h = ''
+		# for element in (number[4:8]):
+		# 	h+=chr(element)
+
+		# hum_val=struct.unpack('f',h)
+		# hum = round(hum_val[0], 2)
 	else:
 		t_val=bytearray(number[0:4])
 		h_val=bytearray(number[4:8])
@@ -689,3 +704,4 @@ def main():
 
 if __name__ == "__main__":
 	main()
+
